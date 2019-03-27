@@ -16,7 +16,6 @@ import numpy as np
 from math import cos, sin
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from mpl_toolkits.basemap import Basemap
 from matplotlib import colors
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
@@ -159,6 +158,8 @@ class SphereWeightBase(WeightBase):
         """
         Plot global map of points and centers
         """
+        from mpl_toolkits.basemap import Basemap
+
         fig = plt.figure(figsize=(10, 4))
 
         if lon0 is None:
@@ -322,7 +323,7 @@ class SphereDistRel(SphereWeightBase):
             self._transfer_dist_to_weight(dist_m, ref_distance)
 
         self.points_weights = weight
-        self.normalize_weight()
+        self.normalize_weight(self.normalize_mode)
 
         logger.info("Number of points at this stage: %d" % self.npoints)
         logger.info("Condition number of weight array(max/min): %8.2f"
@@ -361,7 +362,7 @@ class SphereDistRel(SphereWeightBase):
                 plt.savefig(figname)
         return ref_dists, cond_nums
 
-    def smart_scan(self, max_ratio=0.5, start=1.0, gap=0.5, drop_ratio=0.95,
+    def smart_scan(self, max_ratio=0.5, start=1.0, gap=0.5, drop_ratio=0.20,
                    plot=False, figname=None):
         """
         Searching for the ref_distance by condition number which satisfy
@@ -380,6 +381,23 @@ class SphereDistRel(SphereWeightBase):
         :param figname: figure name
         :return: the optimal ref_distance and correspoinding condition number
         """
+        # print("npoints: %d" % self.npoints)
+        if self.npoints <= 2:
+            # if only two points, then the all the weights will be 1
+            # anyway
+            logger.info("Less or equal than two points so the weights are "
+                        "automatically set to 1")
+            self.points_weights = np.ones(self.npoints)
+            self.normalize_weight()
+            return 1, 1
+
+        if self.npoints <= 10:
+            # reset drop ratio if there is less that 5 points
+            # otherwise, it might go overflow while searching for
+            # drop. Note that this will not impact the final search
+            # result.
+            drop_ratio = 0.99
+
         dist_m = self._build_distance_matrix()
 
         ref_dists = []
@@ -395,12 +413,24 @@ class SphereDistRel(SphereWeightBase):
             if idx >= 2 and (_cond_num < drop_ratio * max(cond_nums)):
                 break
             if _ref_dist > 200.0:
-                raise ValueError("Smart scan error with _ref_dist overflow")
+                if np.isclose(max(cond_nums), min(cond_nums)):
+                    print("cond nums are very close to each other")
+                    break
+                else:
+                    print("Smart scan error with _ref_dist overflow")
+                    return None, None
             idx += 1
             _ref_dist += gap
 
         minv = min(cond_nums)
+        minv_idx = cond_nums.index(minv)
         maxv = max(cond_nums)
+        maxv_idx = cond_nums.index(maxv)
+
+        logger.info("Min and Max condition number points([ref_dist, cond_num])"
+                    " -- min[%f, %f] -- max[%f, %f]" %
+                    (ref_dists[minv_idx], minv, ref_dists[maxv_idx], maxv))
+
         threshold = minv + max_ratio * (maxv - minv)
         best_idx, best_cond_num = search_for_ratio(cond_nums, threshold)
         best_ref_dist = ref_dists[best_idx]
@@ -419,6 +449,7 @@ class SphereDistRel(SphereWeightBase):
                 plt.show()
             else:
                 plt.savefig(figname)
+                plt.close()
 
         # calculate weight based on the best ref_dist value
         weight, self.exp_matrix = \
