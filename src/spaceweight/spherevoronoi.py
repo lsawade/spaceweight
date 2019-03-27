@@ -68,9 +68,9 @@ def calculate_haversine_distance(point_1, point_2, sphere_radius):
     # coordinates - phi differs by pi/4
     spherical_distance = \
         2.0 * sphere_radius * \
-        math.asin(math.sqrt(((1 - math.cos(phi_2-phi_1))/2.) +
-                            math.sin(phi_1) * math.sin(phi_2) *
-                            ((1 - math.cos(lambda_2-lambda_1))/2.)))
+        math.asin(math.sqrt(((1 - math.cos(phi_2-phi_1))/2.)
+                            + math.sin(phi_1) * math.sin(phi_2)
+                            * ((1 - math.cos(lambda_2-lambda_1))/2.)))
     return spherical_distance
 
 
@@ -474,8 +474,8 @@ class SphericalVoronoi:
                     calculate_haversine_distance(a_point, b_point, 1.0)
                 s = (root_a_dist + root_b_dist + a_b_dist) / 2
                 totalexcess += \
-                    4 * math.atan(math.sqrt(math.tan(0.5 * s) *
-                                            math.tan(0.5 * (s-root_a_dist)) *
-                                            math.tan(0.5 * (s-root_b_dist)) *
-                                            math.tan(0.5 * (s-a_b_dist))))
+                    4 * math.atan(math.sqrt(math.tan(0.5 * s)
+                                            * math.tan(0.5 * (s-root_a_dist))
+                                            * math.tan(0.5 * (s-root_b_dist))
+                                            * math.tan(0.5 * (s-a_b_dist))))
             return totalexcess
