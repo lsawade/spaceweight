@@ -130,7 +130,7 @@ def calc_circumcenters(tetrahedrons):
     dx = np.delete(d, 1, axis=2)
     dy = np.delete(d, 2, axis=2)
     dz = np.delete(d, 3, axis=2)
-    
+
     dx = np.linalg.det(dx)
     dy = -np.linalg.det(dy)
     dz = np.linalg.det(dz)
