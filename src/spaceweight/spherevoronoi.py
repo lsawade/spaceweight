@@ -14,13 +14,8 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 import scipy
 import itertools
-from scipy._lib._version import NumpyVersion
 from scipy.spatial import distance
 import math
-
-
-# Whether Numpy has stacked matrix linear algebra
-HAS_NUMPY_VEC_DET = (NumpyVersion(np.__version__) >= '1.8.0')
 
 __all__ = ['SphericalVoronoi']
 
